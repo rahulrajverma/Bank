@@ -49,6 +49,10 @@ def main():
     
     st.title("RAG Question Answering System")
     st.markdown("Ask questions based on your indexed documents")
+
+    
+    if "history" not in st.session_state:
+        st.session_state.history = []
     
     try:
         vector_store = load_vector_store()
@@ -61,11 +65,19 @@ def main():
     with st.sidebar:
         st.header("⚙️ Settings")
         k = st.slider("Number of documents to retrieve", min_value=1, max_value=5, value=3)
+
+        st.header("🕘 Query History")
+
+        for i, q in enumerate(st.session_state.history, 1):
+            st.write(f"{i}. {q}")
     
     query = st.text_input("Enter your question:", placeholder="What would you like to know?")
     
     if query:
         if st.button("Get Answer", type="primary"):
+
+            st.session_state.history.append(query)
+
             with st.spinner("Searching and generating answer..."):
                 answer, docs = get_answer(vector_store, query, k)
             
