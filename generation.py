@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+history = []
+
 def setup_gemini():
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
@@ -17,18 +19,26 @@ def setup_gemini():
     )
     return llm
 
-def get_answer(llm, query, docs):
+def get_answer(llm, query, docs,history):
     context = "\n\n".join([doc.page_content for doc in docs])
-    
-    prompt = f"""Answer the question based on this context only.
-If answer not in context, say "I don't know".
 
-Context: {context}
 
-Question: {query}
+    history_text = "\n".join(history[-5:])
 
-Answer: """
-    
+    prompt = f"""You are a helpful banking assistant.
+
+    Previous conversation:
+    {history_text}
+
+    Answer the question based only on the context.
+
+    Context: {context}
+
+    Question: {query}
+
+    Answer:
+    """
+
     response = llm.invoke(prompt)
     return response.content
 
@@ -56,12 +66,13 @@ def main():
         docs = retrieve(vector_store, query, k)
         
         print("\nGenerating answer...")
-        answer = get_answer(llm, query, docs)
+        answer = get_answer(llm, query, docs,history)
         
         print("\n" + "="*50)
         print(f"Q: {query}")
         print(f"A: {answer}")
         print("="*50)
+        history.append(query)
         
         print("\nSources used:")
         for i, doc in enumerate(docs, 1):
